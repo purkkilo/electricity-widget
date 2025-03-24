@@ -1,54 +1,99 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { useState, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface Price {
+  time_start: string;
+  time_end: string;
+  EUR_per_kWh: number;
+}
 
 export default function HomeScreen() {
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [prices, setPrices] = useState<Price[]>([]);
+  const [today, setToday] = useState<Date>(new Date());
+  const roundedPrice = (price: number) =>
+    Math.round((price + Number.EPSILON) * 10000) / 100;
+
+  const formatDate = (date: Date) => {
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    return `${y}/${m >= 10 ? m : `0${m}`}-${d >= 10 ? d : `0${d}`}`;
+  };
+
+  const formatHourRange = (start: string, end: string) => {
+    const s: Date = new Date(start);
+    const e: Date = new Date(end);
+    const temp_s = s.getHours();
+    const temp_e = e.getHours();
+
+    const s_h = temp_s >= 10 ? temp_s.toString() : `0${temp_s}`;
+    const e_h = temp_e >= 10 ? temp_e.toString() : `0${temp_e}`;
+
+    return `${s_h} - ${e_h}`;
+  };
+
+  const getPrices = async (date: Date) => {
+    try {
+      const response = await fetch(
+        `https://www.sahkonhintatanaan.fi/api/v1/prices/${formatDate(
+          date
+        )}.json`
+      );
+      const json = await response.json();
+      setPrices(json);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getPrices(today);
+  }, []);
+
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
       headerImage={
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
+          source={require("@/assets/images/partial-react-logo.png")}
           style={styles.reactLogo}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+      }
+    >
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
+        <ThemedText type="title">Today's prices (c/kWh)</ThemedText>
+        {isLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView>
+              {prices.map((price, index) => (
+                <ThemedView key={index} style={{ padding: 8 }}>
+                  <ThemedText type="subtitle">
+                    {formatHourRange(price.time_start, price.time_end)}
+                  </ThemedText>
+                  <ThemedText type="default">
+                    {roundedPrice(price.EUR_per_kWh)} c/kWh
+                  </ThemedText>
+                </ThemedView>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        )}
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -56,8 +101,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   stepContainer: {
@@ -69,6 +114,6 @@ const styles = StyleSheet.create({
     width: 290,
     bottom: 0,
     left: 0,
-    position: 'absolute',
+    position: "absolute",
   },
 });
