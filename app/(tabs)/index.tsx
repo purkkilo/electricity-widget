@@ -2,6 +2,7 @@ import { Image, StyleSheet } from "react-native";
 
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import ElectricityList from "@/components/ElectricityList";
+import StorageTest from "@/components/StorageTest";
 
 export default function HomeScreen() {
   return (
@@ -14,6 +15,7 @@ export default function HomeScreen() {
         />
       }
     >
+      <StorageTest />
       <ElectricityList />
     </ParallaxScrollView>
   );

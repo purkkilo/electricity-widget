@@ -5,14 +5,22 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint"
   },
   "jest": {
     "preset": "jest-expo"
+  },
+  "codegenConfig": {
+    "name": "NativeLocalStorageSpec",
+    "type": "modules",
+    "jsSrcsDir": "specs",
+    "android": {
+      "javaPackageName": "com.nativelocalstorage"
+    }
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
