@@ -7,31 +7,35 @@ import {
   Button,
 } from "react-native";
 
-import NativeLocalStorage from "../specs/NativeLocalStorage";
-const EMPTY = "<empty>";
+import {
+  saveValue,
+  clearAll,
+  deleteValue,
+  getValue,
+} from "@/utils/manageStorage";
 
 export default function StorageTest() {
   const [value, setValue] = useState<string | null>(null);
 
   const [editingValue, setEditingValue] = useState<string | null>(null);
-
+  const key = "myKey";
   useEffect(() => {
-    const storedValue = NativeLocalStorage?.getItem("myKey");
+    const storedValue = getValue(key);
     setValue(storedValue ?? "");
   }, []);
 
-  function saveValue() {
-    NativeLocalStorage?.setItem(editingValue ?? EMPTY, "myKey");
+  function save() {
+    saveValue(editingValue, key);
     setValue(editingValue);
   }
 
-  function clearAll() {
-    NativeLocalStorage?.clear();
+  function clear() {
+    clearAll();
     setValue("");
   }
 
-  function deleteValue() {
-    NativeLocalStorage?.removeItem(editingValue ?? EMPTY);
+  function remove() {
+    deleteValue(key);
     setValue("");
   }
 
@@ -45,9 +49,9 @@ export default function StorageTest() {
         style={styles.textInput}
         onChangeText={setEditingValue}
       />
-      <Button title="Save" onPress={saveValue} />
-      <Button title="Delete" onPress={deleteValue} />
-      <Button title="Clear" onPress={clearAll} />
+      <Button title="Save" onPress={save} />
+      <Button title="Delete" onPress={remove} />
+      <Button title="Clear" onPress={clear} />
     </SafeAreaView>
   );
 }
