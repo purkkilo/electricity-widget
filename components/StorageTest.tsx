@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  Button,
-} from "react-native";
+import { StyleSheet, TextInput, Button, Appearance } from "react-native";
 
 import {
   saveValue,
@@ -14,18 +8,35 @@ import {
   getValue,
 } from "@/utils/manageStorage";
 
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+
 export default function StorageTest() {
   const [value, setValue] = useState<string | null>(null);
-
   const [editingValue, setEditingValue] = useState<string | null>(null);
   const key = "myKey";
+  const [textInputStyle, setTextInputStyle] = useState(styles.lightTextInput);
   useEffect(() => {
-    const storedValue = getValue(key);
-    setValue(storedValue ?? "");
+    fetchStoredValue(key);
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setTextInputStyle(
+        colorScheme === "dark" ? styles.darkTextInput : styles.lightTextInput
+      );
+    });
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
+  async function fetchStoredValue(key: string) {
+    const storedValue = await getValue(key);
+    setValue(storedValue ?? "");
+  }
+
   function save() {
-    saveValue(editingValue, key);
+    if (editingValue !== null) {
+      saveValue(editingValue, key);
+    }
     setValue(editingValue);
   }
 
@@ -40,19 +51,19 @@ export default function StorageTest() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Text style={styles.text}>
+    <ThemedView>
+      <ThemedText type="default" style={styles.text}>
         Current stored value is: {value ?? "No Value"}
-      </Text>
+      </ThemedText>
       <TextInput
         placeholder="Enter the text you want to store"
-        style={styles.textInput}
+        style={textInputStyle}
         onChangeText={setEditingValue}
       />
       <Button title="Save" onPress={save} />
       <Button title="Delete" onPress={remove} />
       <Button title="Clear" onPress={clear} />
-    </SafeAreaView>
+    </ThemedView>
   );
 }
 
@@ -61,10 +72,21 @@ const styles = StyleSheet.create({
     margin: 10,
     fontSize: 20,
   },
-  textInput: {
+  lightTextInput: {
+    color: "black",
+    backgroundColor: "white",
     margin: 10,
     height: 40,
-    borderColor: "black",
+    borderWidth: 1,
+    paddingLeft: 5,
+    paddingRight: 5,
+    borderRadius: 5,
+  },
+  darkTextInput: {
+    color: "white",
+    backgroundColor: "black",
+    margin: 10,
+    height: 40,
     borderWidth: 1,
     paddingLeft: 5,
     paddingRight: 5,

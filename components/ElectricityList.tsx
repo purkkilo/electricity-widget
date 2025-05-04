@@ -1,11 +1,11 @@
-import { ActivityIndicator, StyleSheet, ScrollView } from "react-native";
+import { ActivityIndicator, StyleSheet } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatHourRange } from "@/utils/format";
-import { saveValue } from "@/utils/manageStorage";
+import { getAllKeys, saveValue } from "@/utils/manageStorage";
 import { DateTime, Settings } from "luxon";
 
 // Configure the time zone
@@ -35,7 +35,9 @@ export default function ElectricityList() {
       const json = await response.json();
       setPrices(json);
       setHour(DateTime.now().get("hour"));
-      saveValue(json[hour].EUR_per_kWh.toString(), "electricityPrice");
+      saveValue(json[hour].EUR_per_kWh.toString(), "electricityPrice2");
+      console.log(hour, json[hour].EUR_per_kWh.toString(), "electricityPrice");
+      await getAllKeys();
     } catch (error) {
       console.error(error);
     } finally {
@@ -67,6 +69,7 @@ export default function ElectricityList() {
               <ThemedText type="default">
                 {roundedPrice(price.EUR_per_kWh)} c/kWh
               </ThemedText>
+              <ThemedText type="default">{price.EUR_per_kWh} c/kWh</ThemedText>
             </ThemedView>
           ))}
         </SafeAreaView>

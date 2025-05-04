@@ -1,34 +1,64 @@
-
-//import NativeLocalStorage from "../specs/NativeLocalStorage"
-import {Platform} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const EMPTY = "<empty>";
 
-const NativeLocalStorage = Platform.OS == "android" ? require("../specs/NativeLocalStorage") : undefined;
+export const getValue = async (key: string) => {
+  try {
+    const value = await AsyncStorage.getItem(key);
+    if (value === null) return EMPTY;
 
-// Mimic localstorage for now (only used in widget in android app)
-// So I can develop on my linux laptop
-const LocalStorage = {
-  getItem: (i) => {console.log("getItem", i)},
-  setItem: (v,k) => {console.log("setItem", v,k)},
-  clear: () => {console.log("Clearing storage")},
-  delete: (v) => {console.log("delete", v)},
-}
+    return value;
+  } catch (e) {
+    // error reading value
+    console.error(e);
+    return null;
+  }
+};
 
+export const saveValue = async (value: string, key: string) => {
+  try {
+    await AsyncStorage.setItem(key, value ? value : EMPTY);
+  } catch (e) {
+    // saving error
+    console.error(e);
+  }
+};
 
-export function getValue(key: string) {
-  console.log(Platform.OS);
-  const value = Platform.OS == "android" ? NativeLocalStorage?.getItem(key) : LocalStorage.getItem(key);
-  return value === EMPTY ? null : value;
-}
+export const clearAll = async () => {
+  try {
+    await AsyncStorage.clear();
+  } catch (e) {
+    // clear error
+    console.error(e);
+  }
 
-export function saveValue(value: string | null, key: string) {
-  Platform.OS == "android" ? NativeLocalStorage?.setItem(value ?? EMPTY, key) : LocalStorage.setItem(value, key);
-}
+  console.log("clearAll Done.");
+};
 
-export function clearAll() {
-  Platform.OS == "android" ? NativeLocalStorage?.clear() : LocalStorage.clear();
-}
+export const deleteValue = async (key: string) => {
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (e) {
+    // remove error
+    console.error(e);
+  }
 
-export function deleteValue(value: string | null) {
-  Platform.OS == "android" ? NativeLocalStorage?.removeItem(value ?? EMPTY): LocalStorage.delete(value);
-}
+  console.log("deleteValue Done.");
+};
+
+export const getAllKeys = async () => {
+  let keys: readonly string[] = [];
+  await AsyncStorage.getAllKeys()
+    .then((k) => {
+      keys = k;
+    })
+    .catch((e) => {
+      // error getting keys
+      console.error(e);
+    })
+    .finally(() => {
+      console.log("getAllKeys Done.");
+      console.log(keys);
+    });
+  // example console.log result:
+  // ['@MyApp_user', '@MyApp_key']
+};

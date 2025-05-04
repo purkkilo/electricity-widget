@@ -116,6 +116,7 @@ internal fun updateAppWidget(
     keys: Array<String>
 ) {
     try {
+        println("$keys")
         val ePrice = sharedPref.getString(keys[0], "{\"text\":''}").toString()
         //val mLimit = sharedPref.getString(keys[1], "{\"text\":''}").toString()
         //val hLimit = sharedPref.getString(keys[2], "{\"text\":''}").toString()
