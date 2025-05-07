@@ -1,19 +1,34 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/Widget.Electricitywidget.AppWidget.Container"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:minResizeWidth="130dp"
-    android:minResizeHeight="220dp"
-    android:theme="@style/AppTheme.AppWidgetContainer">
+    android:background="@drawable/app_widget_background"
+    android:backgroundTint="#20202C"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    android:theme="@style/Theme.Material3.DynamicColors.DayNight">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginRight="5dp"
+        android:contentDescription="@string/widget_icon"
+        android:foregroundTint="#C74444"
+        android:src="@android:drawable/ic_lock_idle_low_battery" />
 
     <TextView
         android:id="@+id/appwidget_text"
-        android:layout_width="wrap_content"
+        android:layout_width="55dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+
+        android:layout_gravity="center"
+        android:layout_marginStart="0dp"
         android:contentDescription="@string/app_widget_description"
+        android:gravity="center"
         android:text="@string/appwidget_text"
+        android:textColor="#FFFFFF"
         android:textSize="24sp"
         android:textStyle="bold|italic" />
 
@@ -21,11 +36,12 @@
         android:id="@+id/appwidget_unit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/appwidget_text"
-        android:layout_marginStart="5dp"
-        android:layout_toEndOf="@+id/appwidget_text"
-        android:text="@string/appwidget_unit"
-        android:textStyle="italic"
-        tools:textSize="24sp" />
 
-</RelativeLayout>
+        android:layout_gravity="top"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="-5dp"
+        android:text="@string/appwidget_unit"
+        android:textColor="#CCCBCB"
+        android:textStyle="italic" />
+
+</LinearLayout>

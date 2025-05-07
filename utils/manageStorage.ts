@@ -14,9 +14,38 @@ export const getValue = async (key: string) => {
   }
 };
 
+export const getMultiple = async (keys: string[]) => {
+  let values;
+  try {
+    values = await AsyncStorage.multiGet(keys);
+    return values ? values : [];
+  } catch (e) {
+    // error reading values
+    console.error(e);
+    return null;
+  }
+};
+
 export const saveValue = async (value: string, key: string) => {
   try {
     await AsyncStorage.setItem(key, value ? value : EMPTY);
+  } catch (e) {
+    // saving error
+    console.error(e);
+  }
+};
+
+export const saveMultiple = async (items: [string, string][]) => {
+  try {
+    /*
+      items = [
+                ["@MyApp_user", "value_1"],
+                ["@MyApp_key", "value_2"]
+              ]
+    */
+    console.log("Saving multiple items:", items);
+
+    await AsyncStorage.multiSet(items);
   } catch (e) {
     // saving error
     console.error(e);
@@ -30,8 +59,6 @@ export const clearAll = async () => {
     // clear error
     console.error(e);
   }
-
-  console.log("clearAll Done.");
 };
 
 export const deleteValue = async (key: string) => {
@@ -41,8 +68,15 @@ export const deleteValue = async (key: string) => {
     // remove error
     console.error(e);
   }
+};
 
-  console.log("deleteValue Done.");
+export const deleteMultiple = async (keys: string[]) => {
+  try {
+    await AsyncStorage.multiRemove(keys);
+  } catch (e) {
+    // remove error
+    console.error(e);
+  }
 };
 
 export const getAllKeys = async () => {
@@ -54,11 +88,9 @@ export const getAllKeys = async () => {
     .catch((e) => {
       // error getting keys
       console.error(e);
-    })
-    .finally(() => {
-      console.log("getAllKeys Done.");
-      console.log(keys);
     });
+
+  return keys;
   // example console.log result:
   // ['@MyApp_user', '@MyApp_key']
 };

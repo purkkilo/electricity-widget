@@ -1,8 +1,8 @@
-import { Image, StyleSheet } from "react-native";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
-import ElectricityList from "@/components/ElectricityList";
+import StorageTest from "@/components/SettingsPanel";
+import { Image, StyleSheet } from "react-native";
 
-export default function HomeScreen() {
+export default function SettingsScreen() {
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -13,7 +13,7 @@ export default function HomeScreen() {
         />
       }
     >
-      <ElectricityList />
+      <StorageTest />
     </ParallaxScrollView>
   );
 }

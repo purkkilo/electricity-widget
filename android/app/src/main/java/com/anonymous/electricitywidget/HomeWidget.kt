@@ -8,20 +8,25 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
+import com.reactnativecommunity.asyncstorage.ReactDatabaseSupplier
 import org.json.JSONException
+import org.json.JSONObject
+
 import java.time.Duration
 import java.time.ZonedDateTime
+import androidx.core.graphics.toColorInt
+
 
 /**
  * Implementation of App Widget functionality.
  */
+
 class HomeWidget : AppWidgetProvider() {
-    private val prefsFile : String = "com.anonymous.electricitywidget_preferences"
-    private val keys : Array<String> = arrayOf("electricityPrice","mediumLimit","highLimit")
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onUpdate(
@@ -29,10 +34,13 @@ class HomeWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val sharedPref = context.getSharedPreferences(prefsFile, Context.MODE_PRIVATE)
+        val data = getDataFromRNDatabase(
+            context
+        )
+
         // There may be multiple widgets active, so update all of them
         appWidgetIds.forEach { appWidgetId ->
-            updateAppWidget(context, appWidgetManager, appWidgetId, sharedPref, keys)
+            updateAppWidget(context, appWidgetManager, appWidgetId, data)
         }
         scheduleUpdates(context)
     }
@@ -91,6 +99,86 @@ class HomeWidget : AppWidgetProvider() {
         return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
     }
 
+    private fun getDataFromRNDatabase(context: Context): JSONObject {
+
+        var catalystLocalStorage: Cursor? = null
+        var readableDatabase: SQLiteDatabase? = null
+        val columns:  Array<String> = arrayOf("key, value")
+        val data = JSONObject()
+
+        try {
+            readableDatabase =
+                ReactDatabaseSupplier.getInstance(context.applicationContext).readableDatabase
+            catalystLocalStorage = readableDatabase.query("catalystLocalStorage", columns, null, null, null, null, null)
+
+            val keyColumn = catalystLocalStorage.getColumnIndexOrThrow("key")
+            val valueColumn = catalystLocalStorage.getColumnIndexOrThrow("value")
+
+            if (catalystLocalStorage.moveToFirst()) {
+                do {
+                    data.put(catalystLocalStorage.getString(keyColumn), catalystLocalStorage.getString(valueColumn))
+                } while (catalystLocalStorage.moveToNext())
+            }
+
+        } catch (e: Exception) {
+            println(e)
+        } finally {
+            catalystLocalStorage?.close()
+            readableDatabase?.close()
+        }
+
+        return data
+    }
+
+    private fun updateAppWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        data: JSONObject,
+    ) {
+        val newText: String
+        val hLimit: Int
+        val mLimit: Int
+        val widgetId = R.layout.home_widget
+        val textId = R.id.appwidget_text
+        var newColor = "white" // Normal color
+        try {
+            val ePrice = data.get("electricityPrice").toString().toFloat()
+
+            newText = data.get("electricityPrice").toString()
+
+            hLimit = Integer.parseInt(data.get("highLimit").toString())
+            mLimit = Integer.parseInt(data.get("mediumLimit").toString())
+
+            // Construct the RemoteViews object
+            val views = RemoteViews(context.packageName, widgetId)
+            views.setTextViewText(R.id.appwidget_text, newText)
+
+
+
+
+            // Only set color if negative or over medium limit, don't change between 0 - mLimit
+            if(ePrice >= hLimit) {
+                newColor = "red"
+            }
+            if (ePrice >= mLimit) {
+                newColor = "yellow"
+            }
+            if(ePrice <= 0) {
+                newColor = "green"
+            }
+
+
+            views.setInt(textId, "setTextColor", newColor.toColorInt())
+            // Instruct the widget manager to update the widget
+            println("Updating widget $appWidgetId with text $newText")
+
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+    }
+
     private val Context.alarmManager: AlarmManager
         get() = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -108,26 +196,6 @@ class HomeWidget : AppWidgetProvider() {
 }
 
 
-internal fun updateAppWidget(
-    context: Context,
-    appWidgetManager: AppWidgetManager,
-    appWidgetId: Int,
-    sharedPref: SharedPreferences,
-    keys: Array<String>
-) {
-    try {
-        println("$keys")
-        val ePrice = sharedPref.getString(keys[0], "{\"text\":''}").toString()
-        //val mLimit = sharedPref.getString(keys[1], "{\"text\":''}").toString()
-        //val hLimit = sharedPref.getString(keys[2], "{\"text\":''}").toString()
 
-        // Construct the RemoteViews object
-        val views = RemoteViews(context.packageName, R.layout.home_widget)
-        views.setTextViewText(R.id.appwidget_text, ePrice)
-        // Instruct the widget manager to update the widget
-        println("Updating widget $appWidgetId with text $ePrice")
-        appWidgetManager.updateAppWidget(appWidgetId, views)
-    } catch (e: JSONException) {
-        e.printStackTrace()
-    }
-}
+
+
