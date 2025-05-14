@@ -1,31 +1,55 @@
-import { Image, StyleSheet } from "react-native";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { Alert, Linking } from "react-native";
+import { useCallback } from "react";
 import ElectricityList from "@/components/ElectricityList";
+import { ThemedText } from "@/components/ThemedText";
+import BaseLayout from "@/components/BaseLayout";
+
+type OpenURLButtonProps = {
+  url: string;
+  children: string;
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{
-        light: "rgb(126, 212, 255)",
-        dark: "rgb(11, 22, 32)",
-      }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/lightning.png")}
-          style={styles.logo}
-        />
+  const icon = {
+    url: "https://www.flaticon.com/free-icons/thunder",
+    text: "Thunder icons created by Freepik - Flaticon",
+  };
+  const api = {
+    url: "https://www.sahkonhintatanaan.fi",
+    text: "Electricity prices from sahkonhintatanaan.fi",
+  };
+  const links = [icon, api];
+
+  const Link = ({ url, children }: OpenURLButtonProps) => {
+    const handlePress = useCallback(async () => {
+      // Checking if the link is supported for links with custom URL scheme.
+      const supported = await Linking.canOpenURL(url);
+
+      if (supported) {
+        // Opening the link with some app, if the URL scheme is "http" the web link should be opened
+        // by some browser in the mobile
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(`Don't know how to open this URL: ${url}`);
       }
-    >
+    }, [url]);
+
+    return (
+      <ThemedText type="link" onPress={handlePress}>
+        {children}
+      </ThemedText>
+    );
+  };
+
+  return (
+    <BaseLayout>
       <ElectricityList />
-    </ParallaxScrollView>
+      <ThemedText type="subtitle">Credits:</ThemedText>
+      {links.map((link, index) => (
+        <Link key={index} url={link.url}>
+          {link.text}
+        </Link>
+      ))}
+    </BaseLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  logo: {
-    height: 230,
-    width: 250,
-    top: 10,
-    position: "absolute",
-  },
-});
