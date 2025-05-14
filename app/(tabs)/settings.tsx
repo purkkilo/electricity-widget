@@ -1,5 +1,5 @@
 import ParallaxScrollView from "@/components/ParallaxScrollView";
-import StorageTest from "@/components/SettingsPanel";
+import SettingsPanel from "@/components/SettingsPanel";
 import { Image, StyleSheet } from "react-native";
 
 export default function SettingsScreen() {
@@ -13,7 +13,7 @@ export default function SettingsScreen() {
         />
       }
     >
-      <StorageTest />
+      <SettingsPanel />
     </ParallaxScrollView>
   );
 }

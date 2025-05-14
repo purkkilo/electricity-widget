@@ -5,11 +5,14 @@ import ElectricityList from "@/components/ElectricityList";
 export default function HomeScreen() {
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerBackgroundColor={{
+        light: "rgb(126, 212, 255)",
+        dark: "rgb(11, 22, 32)",
+      }}
       headerImage={
         <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
+          source={require("@/assets/images/lightning.png")}
+          style={styles.logo}
         />
       }
     >
@@ -19,11 +22,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  logo: {
+    height: 230,
+    width: 250,
+    top: 10,
     position: "absolute",
   },
 });

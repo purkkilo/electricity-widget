@@ -13,7 +13,7 @@ import { DefaultValues } from "@/constants/DefaultValues";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 
-export default function StorageTest() {
+export default function SettingsPanel() {
   const [mLimit, setMLimit] = useState<string>("10");
   const [hLimit, setHLimit] = useState<string>("20");
   const [editingMLimit, setEditingMLimit] = useState("");
@@ -37,7 +37,7 @@ export default function StorageTest() {
 
   async function fetchStoredValues(keys: string[]) {
     const storedItems = await getMultiple(keys);
-    console.log(storedItems);
+
     if (storedItems) {
       setMLimit(storedItems[0][1] ? storedItems[0][1] : DefaultValues.MLIMIT);
       setHLimit(storedItems[1][1] ? storedItems[1][1] : DefaultValues.HLIMIT);
