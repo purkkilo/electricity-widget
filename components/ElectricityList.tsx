@@ -5,22 +5,26 @@ import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatHourRange } from "@/utils/format";
 import { getPricesForDate } from "@/utils/api";
-import { getLimits, saveValue } from "@/utils/manageStorage";
+import {
+  getLimits,
+  saveValue,
+  savePrices,
+  getValue,
+} from "@/utils/manageStorage";
 import { DateTime, Settings } from "luxon";
-import { getMultiple } from "@/utils/manageStorage";
+import { getMultiple, Price } from "@/utils/manageStorage";
 import { DefaultValues } from "@/constants/DefaultValues";
 // Configure the time zone
 Settings.defaultLocale = "fi-FI";
 Settings.defaultZone = "Europe/Helsinki";
-interface Price {
-  time_start: string;
-  time_end: string;
-  EUR_per_kWh: number;
-}
 
 export default function ElectricityList() {
   const [isLoading, setLoading] = useState<boolean>(true);
+  const [isLoadingYesterday, setLoadingYesterday] = useState<boolean>(true);
+  const [isLoadingTomorrow, setLoadingTomorrow] = useState<boolean>(true);
   const [prices, setPrices] = useState<Price[]>([]);
+  const [prevPrices, setPrevPrices] = useState<Price[]>([]);
+  const [tomorrowPrices, setTomorrowPrices] = useState<Price[]>([]);
   const [today, setToday] = useState<DateTime>(DateTime.now());
   const [hour, setHour] = useState<number>(today.get("hour"));
   const [mLimit, setMLimit] = useState<number>(10);
@@ -61,16 +65,171 @@ export default function ElectricityList() {
   };
 
   useEffect(() => {
+    // Set variables for yesterday and tomorrow
+    const yesterday = DateTime.now().minus({ days: 1 });
+    const tomorrow = DateTime.now().plus({ days: 1 });
     setLoading(true);
+    setLoadingYesterday(true);
+    setLoadingTomorrow(true);
+
     setLimits();
-    getPricesForDate(today)
-      .then((data) => {
-        setPrices(data);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    getValue("prices-today").then((data) => {
+      if (data) {
+        const parsedData = JSON.parse(data);
+        const startDate = DateTime.fromISO(parsedData.start);
+        const endDate = DateTime.fromISO(parsedData.end);
+        if (
+          startDate.toISODate() === today.toISODate() &&
+          endDate.toISODate() === today.plus({ days: 1 }).toISODate()
+        ) {
+          setPrices(parsedData.prices);
+          setLoading(false);
+        } else {
+          console.log("Fetching prices for today");
+          getPricesForDate(today)
+            .then((data) => {
+              setPrices(data);
+              savePrices(today, data, "prices-today");
+            })
+            .catch((error) => {
+              console.error("Error fetching prices:", error);
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        }
+      } else {
+        console.log("Fetching prices for today");
+        getPricesForDate(today)
+          .then((data) => {
+            setPrices(data);
+            savePrices(today, data, "prices-today");
+          })
+          .catch((error) => {
+            console.error("Error fetching prices:", error);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
+    });
+
+    getValue("prices-yesterday").then((data) => {
+      if (data) {
+        const parsedData = JSON.parse(data);
+        const startDate = DateTime.fromISO(parsedData.start);
+        const endDate = DateTime.fromISO(parsedData.end);
+        if (
+          startDate.toISODate() === yesterday.toISODate() &&
+          endDate.toISODate() === yesterday.plus({ days: 1 }).toISODate()
+        ) {
+          setPrevPrices(parsedData.prices);
+          setLoadingYesterday(false);
+        } else {
+          console.log("Fetching prices for yesterday");
+          getPricesForDate(yesterday)
+            .then((data) => {
+              setPrevPrices(data);
+              savePrices(yesterday, data, "prices-yesterday");
+            })
+            .catch((error) => {
+              console.error("Error fetching prices:", error);
+            })
+            .finally(() => {
+              setLoadingYesterday(false);
+            });
+        }
+      } else {
+        console.log("Fetching prices for yesterday");
+        getPricesForDate(yesterday)
+          .then((data) => {
+            setPrevPrices(data);
+            savePrices(yesterday, data, "prices-yesterday");
+          })
+          .catch((error) => {
+            console.error("Error fetching prices:", error);
+          })
+          .finally(() => {
+            setLoadingYesterday(false);
+          });
+      }
+    });
+
+    getValue("prices-tomorrow").then((data) => {
+      if (data) {
+        const parsedData = JSON.parse(data);
+        const startDate = DateTime.fromISO(parsedData.start);
+        const endDate = DateTime.fromISO(parsedData.end);
+
+        if (
+          startDate.toISODate() === tomorrow.toISODate() &&
+          endDate.toISODate() === tomorrow.plus({ days: 1 }).toISODate()
+        ) {
+          setTomorrowPrices(parsedData.prices);
+          setLoadingTomorrow(false);
+        } else {
+          // Check if today's time is after 14:15
+          // and if so, fetch tomorrow's prices
+          if (
+            today.get("hour") > 14 ||
+            (today.get("hour") === 14 && today.get("minute") >= 15)
+          ) {
+            console.log("Fetching prices for tomorrow");
+            getPricesForDate(tomorrow)
+              .then((data) => {
+                setTomorrowPrices(data);
+                savePrices(tomorrow, data, "prices-tomorrow");
+              })
+              .catch((error) => {
+                console.error("Error fetching prices:", error);
+              })
+              .finally(() => {
+                setLoadingTomorrow(false);
+              });
+          }
+        }
+      } else {
+        // Check if today's time is after 14:15
+        // and if so, fetch tomorrow's prices
+        if (
+          today.get("hour") > 14 ||
+          (today.get("hour") === 14 && today.get("minute") >= 15)
+        ) {
+          console.log("Fetching prices for tomorrow");
+          getPricesForDate(tomorrow)
+            .then((data) => {
+              setTomorrowPrices(data);
+              savePrices(tomorrow, data, "prices-tomorrow");
+            })
+            .catch((error) => {
+              console.error("Error fetching prices:", error);
+            })
+            .finally(() => {
+              setLoadingTomorrow(false);
+            });
+        }
+      }
+    });
+
+    /*
+    getPricesForDate(yesterday)
+    .then((data) => {
+      setPrevPrices(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching prices:", error);
+    });
+
+    getPricesForDate(tomorrow)
+    .then((data) => {
+      setTomorrowPrices(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching prices:", error);
+    });
+    */
+    setLoading(false);
+  }, [today]);
 
   return (
     <ThemedView style={styles.stepContainer}>
