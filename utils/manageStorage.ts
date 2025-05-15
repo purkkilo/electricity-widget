@@ -1,16 +1,37 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const EMPTY = "<empty>";
+import { DateTime } from "luxon";
+
+export interface Price {
+  time_start: string;
+  time_end: string;
+  EUR_per_kWh: number;
+}
 
 export const getLimits = async () => {
   return await getMultiple(["mLimit", "hLimit"]);
 };
 
+export const savePrices = async (
+  date: DateTime,
+  prices: Price[],
+  key: string
+) => {
+  try {
+    const storageData = {
+      start: date.toISODate(),
+      end: date.plus({ days: 1 }).toISODate(),
+      prices: prices,
+    };
+    saveValue(key, JSON.stringify(storageData));
+  } catch (e) {
+    // saving error
+    console.error(e);
+  }
+};
+
 export const getValue = async (key: string) => {
   try {
-    const value = await AsyncStorage.getItem(key);
-    if (value === null) return EMPTY;
-
-    return value;
+    return await AsyncStorage.getItem(key);
   } catch (e) {
     // error reading value
     console.error(e);
@@ -30,9 +51,9 @@ export const getMultiple = async (keys: string[]) => {
   }
 };
 
-export const saveValue = async (value: string, key: string) => {
+export const saveValue = async (key: string, value: string) => {
   try {
-    await AsyncStorage.setItem(key, value ? value : EMPTY);
+    await AsyncStorage.setItem(key, value ? value : "<empty>");
   } catch (e) {
     // saving error
     console.error(e);

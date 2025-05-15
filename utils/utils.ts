@@ -9,10 +9,7 @@ export const cleanTerminalFromDumbWarnings = () => {
     ) {
       return;
     }
-    if (
-      args[0] === '"shadow*" style props are deprecated. Use "boxShadow".' &&
-      new Error().stack?.includes("useNavigationBuilder")
-    ) {
+    if (args[0] === '"shadow*" style props are deprecated. Use "boxShadow".') {
       return;
     }
     originalConsoleWarn(...args);
