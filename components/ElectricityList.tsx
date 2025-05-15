@@ -3,8 +3,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { formatDate, formatHourRange } from "@/utils/format";
-import { saveValue } from "@/utils/manageStorage";
+import { formatHourRange } from "@/utils/format";
+import { getPricesForDate } from "@/utils/api";
+import { getLimits, saveValue } from "@/utils/manageStorage";
 import { DateTime, Settings } from "luxon";
 import { getMultiple } from "@/utils/manageStorage";
 import { DefaultValues } from "@/constants/DefaultValues";
@@ -25,46 +26,50 @@ export default function ElectricityList() {
   const [mLimit, setMLimit] = useState<number>(10);
   const [hLimit, setHLimit] = useState<number>(20);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
-  const roundedPrice = (price: number) =>
-    Math.round((price + Number.EPSILON) * 10000) / 100;
-  const keys = ["mLimit", "hLimit"];
+  const roundedPrice = (price: number, precision: number = 2) => {
+    // Round to precision number of digits
+    // Math.round((price + Number.EPSILON) * 10000) / 100;
+    return (
+      Math.round((price + Number.EPSILON) * Math.pow(10, precision + 1)) /
+      Math.pow(10, precision)
+    );
+  };
 
-  const getPrices = async (date: DateTime) => {
-    try {
-      const response = await fetch(
-        `https://www.sahkonhintatanaan.fi/api/v1/prices/${formatDate(
-          date
-        )}.json`
+  const setLimits = async () => {
+    const limits = await getLimits();
+    if (limits) {
+      setMLimit(
+        limits[0][1] ? parseInt(limits[0][1]) : parseInt(DefaultValues.MLIMIT)
       );
+      setHLimit(
+        limits[1][1] ? parseInt(limits[1][1]) : parseInt(DefaultValues.HLIMIT)
+      );
+    }
+  };
 
-      const limits = await getMultiple(keys);
-      if (limits) {
-        setMLimit(
-          limits[0][1] ? parseInt(limits[0][1]) : parseInt(DefaultValues.MLIMIT)
-        );
-        setHLimit(
-          limits[1][1] ? parseInt(limits[1][1]) : parseInt(DefaultValues.HLIMIT)
-        );
-      }
-
-      const json = await response.json();
-      const currentPrice = roundedPrice(json[hour].EUR_per_kWh).toString();
-      const now = DateTime.now();
-      setPrices(json);
-      setHour(now.get("hour"));
-      if (today.get("day") !== now.get("day")) {
-        setToday(now);
-      }
-      saveValue(currentPrice, "electricityPrice");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  const priceToColor = (price: number) => {
+    // Set the color of the price based on the limits
+    if (price < 0) {
+      return "rgba(0, 255, 0, 0.35)"; // Neon
+    } else if (price < mLimit) {
+      return "#087ea4"; // Green
+    } else if (price > hLimit) {
+      return "rgba(255, 0, 0, 0.35)"; // Red
+    } else {
+      return "rgb(255, 255, 0.35)"; // Yellow
     }
   };
 
   useEffect(() => {
-    getPrices(today);
+    setLoading(true);
+    setLimits();
+    getPricesForDate(today)
+      .then((data) => {
+        setPrices(data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -87,6 +92,9 @@ export default function ElectricityList() {
                 styles.priceRow,
                 index === hour ? styles.currentRow : {},
                 selectedRow === index ? styles.highligtRow : {},
+                {
+                  borderColor: priceToColor(roundedPrice(price.EUR_per_kWh)),
+                },
               ]}
               onPress={() => {
                 //set the style to highlight the row
@@ -95,10 +103,7 @@ export default function ElectricityList() {
             >
               <ThemedText
                 type="subtitle"
-                style={[
-                  index === hour ? styles.currentHour : {},
-                  styles.hourTitle,
-                ]}
+                style={[index === hour ? styles.currentHour : {}]}
               >
                 {formatHourRange(price.time_start, price.time_end)}
               </ThemedText>
@@ -122,14 +127,12 @@ const styles = StyleSheet.create({
     alignContent: "center",
     justifyContent: "center",
     flexDirection: "column",
-    backgroundColor: "transparent",
   },
   priceRow: {
-    padding: 8,
+    padding: 10,
     borderColor: "white",
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 8,
+    borderWidth: 2,
+    borderRadius: 4,
     alignSelf: "center",
     width: "40%",
     flexDirection: "row",
@@ -137,16 +140,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignContent: "center",
   },
-  currentRow: {
-    borderColor: "#087ea4",
-    height: 80,
-    borderWidth: 2,
-    borderRadius: 5,
-  },
+  currentRow: { backgroundColor: "rgba(0, 125, 163, 0.29)" },
   highligtRow: {
-    backgroundColor: "rgba(0, 125, 163, 0.29)",
+    backgroundColor: "rgba(0, 225, 255, 0.3)",
   },
-  hourTitle: {},
   currentHour: {
     color: "#087ea4",
   },

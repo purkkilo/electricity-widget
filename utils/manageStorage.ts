@@ -1,6 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 const EMPTY = "<empty>";
 
+export const getLimits = async () => {
+  return await getMultiple(["mLimit", "hLimit"]);
+};
+
 export const getValue = async (key: string) => {
   try {
     const value = await AsyncStorage.getItem(key);
