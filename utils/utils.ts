@@ -1,3 +1,8 @@
+import { DateTime, Settings } from "luxon";
+// Configure the time zone
+Settings.defaultLocale = "fi-FI";
+Settings.defaultZone = "Europe/Helsinki";
+
 export const cleanTerminalFromDumbWarnings = () => {
   const originalConsoleWarn = console.warn;
 
@@ -14,4 +19,47 @@ export const cleanTerminalFromDumbWarnings = () => {
     }
     originalConsoleWarn(...args);
   };
+};
+
+export const msUntilNextHour = () => {
+  const now = DateTime.now();
+  const nextHour = now.plus({ hours: 1 }).startOf("hour");
+  return nextHour.diff(now).milliseconds;
+};
+
+export const msUntilMidnight = () => {
+  const now = DateTime.now();
+  const nextMidnight = now.plus({ days: 1 }).startOf("day");
+  return nextMidnight.diff(now).milliseconds;
+};
+
+export const msUntilPriceUpdate = () => {
+  const now = DateTime.now();
+  // Prices update every day at 14:15
+  const nextPriceUpdate = now
+    .plus({ days: 1 })
+    .set({ hour: 14, minute: 15 })
+    .startOf("minute");
+  return nextPriceUpdate.diff(now).milliseconds;
+};
+
+export const roundedPrice = (price: number, precision: number = 2) => {
+  // Round to precision number of digits
+  return (
+    Math.round((price + Number.EPSILON) * Math.pow(10, precision + 2)) /
+    Math.pow(10, precision)
+  );
+};
+
+// Set the color of the price based on the limits
+export const priceToColor = (price: number, mLimit: number, hLimit: number) => {
+  if (price < 0) {
+    return "rgba(0, 255, 0, 0.35)"; // Green
+  } else if (price < mLimit) {
+    return "#087ea4"; // Neon
+  } else if (price > hLimit) {
+    return "rgba(255, 0, 0, 0.35)"; // Red
+  } else {
+    return "rgb(255, 255, 0.35)"; // Yellow
+  }
 };

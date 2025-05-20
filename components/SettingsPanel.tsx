@@ -47,8 +47,6 @@ export default function SettingsPanel() {
   }
 
   async function save() {
-    console.log("mLimit:", editingMLimit);
-    console.log("hLimit:", editingHLimit);
     if (!editingMLimit || !editingHLimit) {
       ToastAndroid.show(
         "Please enter positive values for both limits.",
@@ -56,14 +54,14 @@ export default function SettingsPanel() {
       );
       return;
     }
-    if (parseInt(editingHLimit) <= parseInt(editingMLimit)) {
+    if (parseFloat(editingHLimit) <= parseFloat(editingMLimit)) {
       ToastAndroid.show(
         "High limit must be greater than medium limit.",
         ToastAndroid.SHORT
       );
       return;
     }
-    if (parseInt(editingHLimit) <= 0 || parseInt(editingMLimit) <= 0) {
+    if (parseFloat(editingHLimit) <= 0 || parseFloat(editingMLimit) <= 0) {
       ToastAndroid.show(
         "Please enter positive values for both limits.",
         ToastAndroid.SHORT
@@ -116,7 +114,12 @@ export default function SettingsPanel() {
   }
 
   return (
-    <ThemedView>
+    <ThemedView
+      style={{
+        alignItems: "center",
+        width: "100%",
+      }}
+    >
       <ThemedText type="default" style={styles.text}>
         Medium Limit: {mLimit}
       </ThemedText>
@@ -127,6 +130,7 @@ export default function SettingsPanel() {
         onChangeText={setEditingMLimit}
         clearButtonMode="always"
         keyboardType="numeric"
+        inputMode="decimal"
       />
       <ThemedText type="default" style={styles.text}>
         High Limit: {hLimit}
@@ -138,9 +142,19 @@ export default function SettingsPanel() {
         onChangeText={setEditingHLimit}
         clearButtonMode="always"
         keyboardType="numeric"
+        inputMode="decimal"
       />
-      <Button title="Save" onPress={save} />
-      <Button title="Reset to default" onPress={resetToDefault} />
+      <ThemedView
+        style={{
+          flexDirection: "row",
+          margin: 10,
+          gap: 10,
+          justifyContent: "center",
+        }}
+      >
+        <Button title="Save" color={"green"} onPress={save} />
+        <Button title="Reset to default" onPress={resetToDefault} />
+      </ThemedView>
     </ThemedView>
   );
 }

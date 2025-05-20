@@ -7,6 +7,12 @@ export interface Price {
   EUR_per_kWh: number;
 }
 
+export interface PriceStorage {
+  start: string;
+  end: string;
+  prices: Price[];
+}
+
 export const getLimits = async () => {
   return await getMultiple(["mLimit", "hLimit"]);
 };
