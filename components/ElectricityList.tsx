@@ -1,12 +1,12 @@
 import {
   ActivityIndicator,
-  LayoutChangeEvent,
+  Pressable,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatHourRange } from "@/utils/format";
 import { getPricesForDate } from "@/utils/api";
@@ -26,22 +26,27 @@ import {
   priceToColor,
 } from "@/utils/utils";
 import { DefaultValues } from "@/constants/DefaultValues";
-import TabMenu from "@/components/TabMenu";
 
 // Configure the time zone
 Settings.defaultLocale = "fi-FI";
 Settings.defaultZone = "Europe/Helsinki";
 
+import { Animated, PanResponder } from "react-native";
+import { useAnimatedStyle } from "react-native-reanimated";
+
 export default function ElectricityList() {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isLoadingYesterday, setLoadingYesterday] = useState<boolean>(true);
   const [isLoadingTomorrow, setLoadingTomorrow] = useState<boolean>(true);
+
   const [todayInterval, setTodayInterval] = useState<number>(0);
   const [updateInterval, setUpdateInterval] = useState<number>(0);
   const [midnightInterval, setMidnightInterval] = useState<number>(0);
+
   const [prices, setPrices] = useState<Price[]>([]);
   const [prevPrices, setPrevPrices] = useState<Price[]>([]);
   const [tomorrowPrices, setTomorrowPrices] = useState<Price[]>([]);
+
   const [today, setToday] = useState<DateTime>(DateTime.now());
   const [yesterday, setYesterday] = useState<DateTime>(
     DateTime.now().minus({ days: 1 })
@@ -53,6 +58,10 @@ export default function ElectricityList() {
   const [mLimit, setMLimit] = useState<number>(10);
   const [hLimit, setHLimit] = useState<number>(20);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+
+  const [currentTab, setCurrentTab] = useState<number>(1); // Set the initial tab to the middle one
+  const tabs = ["Yesterday", "Today", "Tomorrow"];
+  const pricesToDisplay = [prevPrices, prices, tomorrowPrices];
 
   // Get the user set limits for colors
   const setLimits = async () => {
@@ -206,12 +215,33 @@ export default function ElectricityList() {
     <ThemedView style={styles.stepContainer}>
       <ThemedView
         style={{
-          alignItems: "center",
+          marginBottom: 30,
+          alignSelf: "center",
           flexDirection: "row",
         }}
       >
-        <TabMenu tabs={["Yesterday", "Today", "Tomorrow"]}></TabMenu>
+        {
+          /* Tab menu for switching between yesterday, today and tomorrow prices */
+          tabs.map((tab, index) => (
+            <Pressable
+              key={index}
+              style={[
+                styles.tab,
+                currentTab === index ? { borderColor: "#055671" } : {},
+              ]}
+              onPress={() => {
+                setCurrentTab(index);
+              }}
+            >
+              <ThemedText type="subtitle" style={[styles.tabText]}>
+                {tab}
+              </ThemedText>
+              {/* Add underline to the selected tab */}
+            </Pressable>
+          ))
+        }
       </ThemedView>
+
       {isLoading ? (
         <ActivityIndicator />
       ) : (
@@ -220,85 +250,21 @@ export default function ElectricityList() {
             type="title"
             style={{ marginBottom: 30, alignSelf: "center" }}
           >
-            Today's prices (c/kWh)
+            {currentTab
+              ? currentTab === 1
+                ? "Today's "
+                : "Tomorrow's "
+              : "Yesterday's "}
+            prices (c/kWh)
           </ThemedText>
-          {prices.map((price, index) => (
+
+          {pricesToDisplay[currentTab].map((price, index) => (
             // If the index is the current hour, highlight the row and the price
             <TouchableOpacity
               key={index}
               style={[
                 styles.priceRow,
-                index === hour ? styles.currentRow : {},
-                selectedRow === index ? styles.highligtRow : {},
-                {
-                  borderColor: priceToColor(
-                    roundedPrice(price.EUR_per_kWh),
-                    mLimit,
-                    hLimit
-                  ),
-                },
-              ]}
-              onPress={() => {
-                //set the style to highlight the row
-                setSelectedRow(selectedRow === index ? null : index);
-              }}
-            >
-              <ThemedText type="subtitle">
-                {formatHourRange(price.time_start, price.time_end)}
-              </ThemedText>
-              <ThemedText type="default">
-                {roundedPrice(price.EUR_per_kWh)} c/kWh
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
-          <ThemedText
-            type="title"
-            style={{ marginBottom: 30, alignSelf: "center" }}
-          >
-            Tomorrow's prices (c/kWh)
-          </ThemedText>
-          {tomorrowPrices.map((price, index) => (
-            // If the index is the current hour, highlight the row and the price
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.priceRow,
-                index === hour ? styles.currentRow : {},
-                selectedRow === index ? styles.highligtRow : {},
-                {
-                  borderColor: priceToColor(
-                    roundedPrice(price.EUR_per_kWh),
-                    mLimit,
-                    hLimit
-                  ),
-                },
-              ]}
-              onPress={() => {
-                //set the style to highlight the row
-                setSelectedRow(selectedRow === index ? null : index);
-              }}
-            >
-              <ThemedText type="subtitle">
-                {formatHourRange(price.time_start, price.time_end)}
-              </ThemedText>
-              <ThemedText type="default">
-                {roundedPrice(price.EUR_per_kWh)} c/kWh
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
-          <ThemedText
-            type="title"
-            style={{ marginBottom: 30, alignSelf: "center" }}
-          >
-            Yesterday's prices (c/kWh)
-          </ThemedText>
-          {prevPrices.map((price, index) => (
-            // If the index is the current hour, highlight the row and the price
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.priceRow,
-                index === hour ? styles.currentRow : {},
+                index === hour && currentTab === 1 ? styles.currentRow : {},
                 selectedRow === index ? styles.highligtRow : {},
                 {
                   borderColor: priceToColor(
@@ -358,12 +324,22 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tab: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    margin: 10,
+    borderRadius: 5,
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.0)",
+    alignSelf: "center",
   },
   tabText: {
     color: "white",
     fontSize: 20,
     fontWeight: "bold",
+  },
+  divider: {
+    borderRightWidth: 1,
+    borderRightColor: "#ddd",
   },
 });

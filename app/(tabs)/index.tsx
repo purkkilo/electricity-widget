@@ -9,6 +9,25 @@ type OpenURLButtonProps = {
   children: string;
 };
 
+const Link = ({ url, children }: OpenURLButtonProps) => {
+  const handlePress = useCallback(async () => {
+    // Checking if the link is supported
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(`Don't know how to open this URL: ${url}`);
+    }
+  }, [url]);
+
+  return (
+    <ThemedText type="link" onPress={handlePress}>
+      {children}
+    </ThemedText>
+  );
+};
+
 export default function HomeScreen() {
   const icon = {
     url: "https://www.flaticon.com/free-icons/thunder",
@@ -19,25 +38,7 @@ export default function HomeScreen() {
     text: "Electricity prices from sahkonhintatanaan.fi",
   };
   const links = [icon, api];
-
-  const Link = ({ url, children }: OpenURLButtonProps) => {
-    const handlePress = useCallback(async () => {
-      // Checking if the link is supported
-      const supported = await Linking.canOpenURL(url);
-
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(`Don't know how to open this URL: ${url}`);
-      }
-    }, [url]);
-
-    return (
-      <ThemedText type="link" onPress={handlePress}>
-        {children}
-      </ThemedText>
-    );
-  };
+  const currentTab = 1; // Set the initial tab to the middle one
 
   return (
     <BaseLayout>
