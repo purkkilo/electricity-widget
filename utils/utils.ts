@@ -43,8 +43,13 @@ export const msUntilPriceUpdate = () => {
   return nextPriceUpdate.diff(now).milliseconds;
 };
 
-export const roundedPrice = (price: number, precision: number = 2) => {
+export const roundedPrice = (
+  price: number,
+  precision: number = 2,
+  addTax: boolean = true
+) => {
   // Round to precision number of digits
+  if (addTax) price = price * 1.255; // Add tax
   return (
     Math.round((price + Number.EPSILON) * Math.pow(10, precision + 2)) /
     Math.pow(10, precision)
