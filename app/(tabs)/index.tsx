@@ -38,7 +38,6 @@ export default function HomeScreen() {
     text: "Electricity prices from sahkonhintatanaan.fi",
   };
   const links = [icon, api];
-  const currentTab = 1; // Set the initial tab to the middle one
 
   return (
     <BaseLayout>

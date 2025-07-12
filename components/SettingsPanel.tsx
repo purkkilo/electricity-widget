@@ -46,64 +46,76 @@ export default function SettingsPanel() {
     }
   }
 
-  async function save() {
-    if (!editingMLimit || !editingHLimit) {
-      ToastAndroid.show(
-        "Please enter positive values for both limits.",
-        ToastAndroid.SHORT
-      );
-      return;
-    }
-    if (parseFloat(editingHLimit) <= parseFloat(editingMLimit)) {
-      ToastAndroid.show(
-        "High limit must be greater than medium limit.",
-        ToastAndroid.SHORT
-      );
-      return;
-    }
-    if (parseFloat(editingHLimit) <= 0 || parseFloat(editingMLimit) <= 0) {
-      ToastAndroid.show(
-        "Please enter positive values for both limits.",
-        ToastAndroid.SHORT
-      );
-      return;
-    }
+  async function saveLimits() {
+    try {
+      if (!editingMLimit || !editingHLimit) {
+        ToastAndroid.show(
+          "Please enter positive values for both limits.",
+          ToastAndroid.SHORT
+        );
+        return;
+      }
+      if (parseFloat(editingHLimit) <= parseFloat(editingMLimit)) {
+        ToastAndroid.show(
+          "High limit must be greater than medium limit.",
+          ToastAndroid.SHORT
+        );
+        return;
+      }
+      if (parseFloat(editingHLimit) <= 0 || parseFloat(editingMLimit) <= 0) {
+        ToastAndroid.show(
+          "Please enter positive values for both limits.",
+          ToastAndroid.SHORT
+        );
+        return;
+      }
 
-    await saveMultiple([
-      ["mLimit", editingMLimit],
-      ["hLimit", editingHLimit],
-    ])
-      .then(() => {
-        setMLimit(editingMLimit);
-        setHLimit(editingHLimit);
-        clearInputs();
-        ToastAndroid.show("Values saved successfully", ToastAndroid.SHORT);
-      })
-      .catch((error) => {
-        console.error("Error saving values:", error);
-      });
+      await saveMultiple([
+        ["mLimit", editingMLimit],
+        ["hLimit", editingHLimit],
+      ])
+        .then(() => {
+          setMLimit(editingMLimit);
+          setHLimit(editingHLimit);
+          clearInputs();
+          ToastAndroid.show("Values saved successfully", ToastAndroid.SHORT);
+        })
+        .catch((error) => {
+          console.error("Error saving values:", error);
+        });
+    } catch (error) {
+      console.log("Error saving values or showing toast:", error);
+    }
   }
 
   async function resetToDefault() {
-    if (
-      editingMLimit !== "" &&
-      editingHLimit !== "" &&
-      (editingHLimit !== hLimit || editingMLimit !== mLimit)
-    ) {
-      await saveMultiple([
-        ["mLimit", DefaultValues.MLIMIT],
-        ["hLimit", DefaultValues.HLIMIT],
-      ])
-        .then(() => {
-          clearInputs();
+    await saveMultiple([
+      ["mLimit", DefaultValues.MLIMIT],
+      ["hLimit", DefaultValues.HLIMIT],
+    ])
+      .then(() => {
+        try {
           ToastAndroid.show("Default values reset.", ToastAndroid.SHORT);
-          setHLimit(DefaultValues.HLIMIT);
-          setMLimit(DefaultValues.MLIMIT);
-        })
-        .catch((error) => {
-          console.error("Error resetting values:", error);
-        });
-    }
+          clearInputs();
+          console.log("Default values reset successfully");
+        } catch (error) {
+          console.log("Error saving values or showing toast:", error);
+        }
+      })
+      .catch((error) => {
+        console.error("Error resetting values:", error);
+      })
+      .finally(() => {
+        setMLimit(DefaultValues.MLIMIT);
+        setHLimit(DefaultValues.HLIMIT);
+        try {
+          ToastAndroid.show("Default values reset.", ToastAndroid.SHORT);
+          clearInputs();
+          console.log("Default values reset successfully");
+        } catch (error) {
+          console.log("Error saving values or showing toast:", error);
+        }
+      });
   }
 
   function clearInputs() {
@@ -120,7 +132,7 @@ export default function SettingsPanel() {
         width: "100%",
       }}
     >
-      <ThemedText type="default" style={styles.text}>
+      <ThemedText type="default" style={[styles.text, { color: "yellow" }]}>
         Medium Limit: {mLimit}
       </ThemedText>
       <TextInput
@@ -132,7 +144,7 @@ export default function SettingsPanel() {
         keyboardType="numeric"
         inputMode="decimal"
       />
-      <ThemedText type="default" style={styles.text}>
+      <ThemedText type="default" style={[styles.text, { color: "red" }]}>
         High Limit: {hLimit}
       </ThemedText>
       <TextInput
@@ -146,13 +158,12 @@ export default function SettingsPanel() {
       />
       <ThemedView
         style={{
-          flexDirection: "row",
-          margin: 10,
-          gap: 10,
+          margin: 20,
+          gap: 15,
           justifyContent: "center",
         }}
       >
-        <Button title="Save" color={"green"} onPress={save} />
+        <Button title="Save" color={"green"} onPress={saveLimits} />
         <Button title="Reset to default" onPress={resetToDefault} />
       </ThemedView>
     </ThemedView>

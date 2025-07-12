@@ -24,6 +24,7 @@ import {
   msUntilPriceUpdate,
   roundedPrice,
   priceToColor,
+  msUntilNextMinute,
 } from "@/utils/utils";
 import { DefaultValues } from "@/constants/DefaultValues";
 
@@ -33,12 +34,14 @@ Settings.defaultZone = "Europe/Helsinki";
 
 import { Animated, PanResponder } from "react-native";
 import { useAnimatedStyle } from "react-native-reanimated";
+import { useIsFocused } from "@react-navigation/native";
 
 export default function ElectricityList() {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isLoadingYesterday, setLoadingYesterday] = useState<boolean>(true);
   const [isLoadingTomorrow, setLoadingTomorrow] = useState<boolean>(true);
 
+  const [nowInterval, setNowInterval] = useState<number>(0);
   const [todayInterval, setTodayInterval] = useState<number>(0);
   const [updateInterval, setUpdateInterval] = useState<number>(0);
   const [midnightInterval, setMidnightInterval] = useState<number>(0);
@@ -47,6 +50,7 @@ export default function ElectricityList() {
   const [prevPrices, setPrevPrices] = useState<Price[]>([]);
   const [tomorrowPrices, setTomorrowPrices] = useState<Price[]>([]);
 
+  const [now, setNow] = useState<DateTime>(DateTime.now());
   const [today, setToday] = useState<DateTime>(DateTime.now());
   const [yesterday, setYesterday] = useState<DateTime>(
     DateTime.now().minus({ days: 1 })
@@ -62,6 +66,9 @@ export default function ElectricityList() {
   const [currentTab, setCurrentTab] = useState<number>(1); // Set the initial tab to the middle one
   const tabs = ["Yesterday", "Today", "Tomorrow"];
   const pricesToDisplay = [prevPrices, prices, tomorrowPrices];
+
+  // Listen to focus changes to update the component
+  const isFocused = useIsFocused();
 
   // Get the user set limits for colors
   const setLimits = async () => {
@@ -162,6 +169,14 @@ export default function ElectricityList() {
   };
 
   const setIntervals = () => {
+    setTimeout(() => {
+      setNow(DateTime.now());
+      const min = setInterval(() => {
+        setNow(DateTime.now());
+      }, 60000); // 1 minute
+      setNowInterval(min);
+    }, msUntilNextMinute());
+
     // Set timer and intervals for updating the prices
     // and the hour, clear them on unmount
     setTimeout(() => {
@@ -208,11 +223,55 @@ export default function ElectricityList() {
       clearInterval(todayInterval);
       clearInterval(updateInterval);
       clearInterval(midnightInterval);
+      clearInterval(nowInterval);
     };
   }, []);
 
+  useEffect(() => {
+    if (isFocused) {
+      // Get/Set limits for colors
+      setLimits();
+    }
+  }, [isFocused]);
+
   return (
     <ThemedView style={styles.stepContainer}>
+      {!prices.length ? (
+        <ThemedView>
+          <ThemedText type="subtitle" style={{ textAlign: "center" }}>
+            Loading data....
+          </ThemedText>
+          <ActivityIndicator></ActivityIndicator>
+        </ThemedView>
+      ) : (
+        <ThemedView
+          style={{
+            marginBottom: 30,
+            alignSelf: "center",
+            borderColor: priceToColor(prices[hour].EUR_per_kWh, mLimit, hLimit),
+            borderWidth: 2,
+            padding: 30,
+            borderRadius: 10,
+          }}
+        >
+          <ThemedText
+            type="title"
+            style={{ textAlign: "center", marginBottom: 10 }}
+          >
+            {now.toLocaleString(DateTime.DATE_MED)}
+          </ThemedText>
+          <ThemedText
+            type="subtitle"
+            style={{ textAlign: "center", marginBottom: 30 }}
+          >
+            {now.toLocaleString(DateTime.TIME_SIMPLE)}
+          </ThemedText>
+          <ThemedText type="subtitle" style={{ textAlign: "center" }}>
+            {roundedPrice(prices[hour].EUR_per_kWh)} c/kWh
+          </ThemedText>
+        </ThemedView>
+      )}
+
       <ThemedView
         style={{
           marginBottom: 30,
@@ -242,7 +301,7 @@ export default function ElectricityList() {
         }
       </ThemedView>
 
-      {isLoading ? (
+      {isLoading || isLoadingTomorrow || isLoadingYesterday ? (
         <ActivityIndicator />
       ) : (
         <SafeAreaView style={{ flex: 1 }}>
@@ -267,11 +326,7 @@ export default function ElectricityList() {
                 index === hour && currentTab === 1 ? styles.currentRow : {},
                 selectedRow === index ? styles.highligtRow : {},
                 {
-                  borderColor: priceToColor(
-                    roundedPrice(price.EUR_per_kWh),
-                    mLimit,
-                    hLimit
-                  ),
+                  borderColor: priceToColor(price.EUR_per_kWh, mLimit, hLimit),
                 },
               ]}
               onPress={() => {

@@ -21,6 +21,12 @@ export const cleanTerminalFromDumbWarnings = () => {
   };
 };
 
+export const msUntilNextMinute = () => {
+  const now = DateTime.now();
+  const nextMinute = now.plus({ minutes: 1 }).startOf("minute");
+  return nextMinute.diff(now).milliseconds;
+};
+
 export const msUntilNextHour = () => {
   const now = DateTime.now();
   const nextHour = now.plus({ hours: 1 }).startOf("hour");
@@ -58,11 +64,12 @@ export const roundedPrice = (
 
 // Set the color of the price based on the limits
 export const priceToColor = (price: number, mLimit: number, hLimit: number) => {
-  if (price < 0) {
+  const p = roundedPrice(price); // Round the price to 2 digits
+  if (p < 0) {
     return "rgba(0, 255, 0, 0.35)"; // Green
-  } else if (price < mLimit) {
+  } else if (p < mLimit) {
     return "#087ea4"; // Neon
-  } else if (price > hLimit) {
+  } else if (p > hLimit) {
     return "rgba(255, 0, 0, 0.35)"; // Red
   } else {
     return "rgb(255, 255, 0.35)"; // Yellow
