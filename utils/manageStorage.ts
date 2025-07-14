@@ -30,7 +30,6 @@ export const savePrices = async (
     };
     saveValue(key, JSON.stringify(storageData));
   } catch (e) {
-    // saving error
     console.error(e);
   }
 };
@@ -39,7 +38,6 @@ export const getValue = async (key: string) => {
   try {
     return await AsyncStorage.getItem(key);
   } catch (e) {
-    // error reading value
     console.error(e);
     return null;
   }
@@ -51,7 +49,6 @@ export const getMultiple = async (keys: string[]) => {
     values = await AsyncStorage.multiGet(keys);
     return values ? values : [];
   } catch (e) {
-    // error reading values
     console.error(e);
     return null;
   }
@@ -78,7 +75,6 @@ export const saveMultiple = async (items: [string, string][]) => {
 
     await AsyncStorage.multiSet(items);
   } catch (e) {
-    // saving error
     console.error(e);
   }
 };
@@ -87,7 +83,6 @@ export const clearAll = async () => {
   try {
     await AsyncStorage.clear();
   } catch (e) {
-    // clear error
     console.error(e);
   }
 };
@@ -96,7 +91,6 @@ export const deleteValue = async (key: string) => {
   try {
     await AsyncStorage.removeItem(key);
   } catch (e) {
-    // remove error
     console.error(e);
   }
 };
@@ -105,7 +99,6 @@ export const deleteMultiple = async (keys: string[]) => {
   try {
     await AsyncStorage.multiRemove(keys);
   } catch (e) {
-    // remove error
     console.error(e);
   }
 };
@@ -117,11 +110,9 @@ export const getAllKeys = async () => {
       keys = k;
     })
     .catch((e) => {
-      // error getting keys
       console.error(e);
     });
 
   return keys;
-  // example console.log result:
   // ['@MyApp_user', '@MyApp_key']
 };

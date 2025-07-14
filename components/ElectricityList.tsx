@@ -6,8 +6,7 @@ import {
 } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useState, useEffect, useRef } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useState, useEffect } from "react";
 import { formatHourRange } from "@/utils/format";
 import { getPricesForDate } from "@/utils/api";
 import {
@@ -32,8 +31,11 @@ import { DefaultValues } from "@/constants/DefaultValues";
 Settings.defaultLocale = "fi-FI";
 Settings.defaultZone = "Europe/Helsinki";
 
-import { Animated, PanResponder } from "react-native";
-import { useAnimatedStyle } from "react-native-reanimated";
+import Animated, {
+  FadeInLeft,
+  FadeInRight,
+  ReduceMotion,
+} from "react-native-reanimated";
 import { useIsFocused } from "@react-navigation/native";
 
 export default function ElectricityList() {
@@ -46,9 +48,16 @@ export default function ElectricityList() {
   const [updateInterval, setUpdateInterval] = useState<number>(0);
   const [midnightInterval, setMidnightInterval] = useState<number>(0);
 
+  const dataNotAvailable = {
+    time_start: "0",
+    time_end: "24",
+    EUR_per_kWh: NaN,
+  };
   const [prices, setPrices] = useState<Price[]>([]);
   const [prevPrices, setPrevPrices] = useState<Price[]>([]);
-  const [tomorrowPrices, setTomorrowPrices] = useState<Price[]>([]);
+  const [tomorrowPrices, setTomorrowPrices] = useState<Price[]>([
+    dataNotAvailable,
+  ]);
 
   const [now, setNow] = useState<DateTime>(DateTime.now());
   const [today, setToday] = useState<DateTime>(DateTime.now());
@@ -93,14 +102,14 @@ export default function ElectricityList() {
     setTomorrow(DateTime.now().plus({ days: 1 }));
     setPrevPrices(prices);
     setPrices(tomorrowPrices);
-    setTomorrowPrices([]);
+    setTomorrowPrices([dataNotAvailable]);
   };
 
   const checkStorageAndHandlePrices = (dateKey: string) => {
     const sampleData: PriceStorage = {
       start: DateTime.now().toISODate(),
       end: DateTime.now().toISODate(),
-      prices: [],
+      prices: [dataNotAvailable],
     };
 
     if (dateKey === "prices-yesterday") {
@@ -133,10 +142,17 @@ export default function ElectricityList() {
           fetchPricesFromApi(date, dateKey);
         } else {
           if (dateKey === "prices-yesterday") {
-            setPrevPrices(parsedData.prices);
+            setPrevPrices(
+              parsedData.prices ? parsedData.prices : [dataNotAvailable]
+            );
           } else if (dateKey === "prices-tomorrow") {
-            setTomorrowPrices(parsedData.prices);
-          } else setPrices(parsedData.prices);
+            setTomorrowPrices(
+              parsedData.prices ? parsedData.prices : [dataNotAvailable]
+            );
+          } else
+            setPrices(
+              parsedData.prices ? parsedData.prices : [dataNotAvailable]
+            );
         }
       })
       .finally(() => {
@@ -151,9 +167,11 @@ export default function ElectricityList() {
   };
 
   const fetchPricesFromApi = (date: DateTime, dateKey: string) => {
-    console.log("Fetching prices for", date.toISODate());
     getPricesForDate(date)
       .then((data) => {
+        if (!data || data.length === 0) {
+          data = [dataNotAvailable];
+        }
         if (dateKey === "prices-yesterday") {
           setPrevPrices(data);
         } else if (dateKey === "prices-tomorrow") {
@@ -237,7 +255,7 @@ export default function ElectricityList() {
   return (
     <ThemedView style={styles.stepContainer}>
       {!prices.length ? (
-        <ThemedView>
+        <ThemedView style={{ marginBottom: 30, alignSelf: "center" }}>
           <ThemedText type="subtitle" style={{ textAlign: "center" }}>
             Loading data....
           </ThemedText>
@@ -271,7 +289,6 @@ export default function ElectricityList() {
           </ThemedText>
         </ThemedView>
       )}
-
       <ThemedView
         style={{
           marginBottom: 30,
@@ -295,7 +312,6 @@ export default function ElectricityList() {
               <ThemedText type="subtitle" style={[styles.tabText]}>
                 {tab}
               </ThemedText>
-              {/* Add underline to the selected tab */}
             </Pressable>
           ))
         }
@@ -304,11 +320,8 @@ export default function ElectricityList() {
       {isLoading || isLoadingTomorrow || isLoadingYesterday ? (
         <ActivityIndicator />
       ) : (
-        <SafeAreaView style={{ flex: 1 }}>
-          <ThemedText
-            type="title"
-            style={{ marginBottom: 30, alignSelf: "center" }}
-          >
+        <ThemedView style={{ flex: 1, alignItems: "center" }}>
+          <ThemedText type="title" style={{ marginBottom: 30 }}>
             {currentTab
               ? currentTab === 1
                 ? "Today's "
@@ -316,33 +329,61 @@ export default function ElectricityList() {
               : "Yesterday's "}
             prices (c/kWh)
           </ThemedText>
-
           {pricesToDisplay[currentTab].map((price, index) => (
-            // If the index is the current hour, highlight the row and the price
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.priceRow,
-                index === hour && currentTab === 1 ? styles.currentRow : {},
-                selectedRow === index ? styles.highligtRow : {},
-                {
-                  borderColor: priceToColor(price.EUR_per_kWh, mLimit, hLimit),
-                },
-              ]}
-              onPress={() => {
-                //set the style to highlight the row
-                setSelectedRow(selectedRow === index ? null : index);
-              }}
+            <Animated.View
+              entering={
+                index % 2 == 0
+                  ? FadeInLeft.duration(1000 + index * 150).reduceMotion(
+                      ReduceMotion.Never
+                    )
+                  : FadeInRight.duration(1000 + index * 150).reduceMotion(
+                      ReduceMotion.Never
+                    )
+              }
+              style={{ width: "80%" }}
             >
-              <ThemedText type="subtitle">
-                {formatHourRange(price.time_start, price.time_end)}
-              </ThemedText>
-              <ThemedText type="default">
-                {roundedPrice(price.EUR_per_kWh)} c/kWh
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.priceRow,
+                  index === hour && currentTab === 1 ? styles.currentRow : {},
+                  selectedRow === index ? styles.highligtRow : {},
+                  {
+                    borderColor: priceToColor(
+                      price.EUR_per_kWh,
+                      mLimit,
+                      hLimit
+                    ),
+                  },
+                ]}
+                onPress={() => {
+                  setSelectedRow(selectedRow === index ? null : index);
+                }}
+              >
+                {price.EUR_per_kWh === null ? (
+                  <>
+                    <ThemedText type="default" style={{ fontWeight: "bold" }}>
+                      {price.time_start} - {price.time_end}
+                    </ThemedText>
+                    <ThemedText type="default" style={{ fontWeight: "bold" }}>
+                      Data Not available yet (prices update after 14:00 Helsinki
+                      (UTC+3))
+                    </ThemedText>
+                  </>
+                ) : (
+                  <>
+                    <ThemedText type="subtitle">
+                      {formatHourRange(price.time_start, price.time_end)}
+                    </ThemedText>
+                    <ThemedText type="default">
+                      {roundedPrice(price.EUR_per_kWh)} c/kWh
+                    </ThemedText>
+                  </>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
           ))}
-        </SafeAreaView>
+        </ThemedView>
       )}
     </ThemedView>
   );
@@ -359,16 +400,17 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   priceRow: {
-    padding: 10,
+    padding: 15,
     borderColor: "white",
-    borderWidth: 2,
-    borderRadius: 4,
+    borderWidth: 1,
+    borderRadius: 3,
     alignSelf: "center",
-    width: "40%",
+    width: "30%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignContent: "center",
+    marginBottom: 1,
   },
   currentRow: { backgroundColor: "rgba(0, 125, 163, 0.29)" },
   highligtRow: {

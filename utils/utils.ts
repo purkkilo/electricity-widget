@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { DateTime, Settings } from "luxon";
 // Configure the time zone
 Settings.defaultLocale = "fi-FI";
@@ -9,12 +10,17 @@ export const cleanTerminalFromDumbWarnings = () => {
   console.warn = (...args) => {
     // https://github.com/react-navigation/react-navigation/issues/11730
     // https://github.com/expo/expo/issues/33248
+    console.log(args);
     if (
-      args[0] === "props.pointerEvents is deprecated. Use style.pointerEvents"
+      args.includes(
+        "props.pointerEvents is deprecated. Use style.pointerEvents"
+      )
     ) {
       return;
     }
-    if (args[0] === '"shadow*" style props are deprecated. Use "boxShadow".') {
+    if (
+      args.includes('"shadow*" style props are deprecated. Use "boxShadow".')
+    ) {
       return;
     }
     originalConsoleWarn(...args);
@@ -66,12 +72,12 @@ export const roundedPrice = (
 export const priceToColor = (price: number, mLimit: number, hLimit: number) => {
   const p = roundedPrice(price); // Round the price to 2 digits
   if (p < 0) {
-    return "rgba(0, 255, 0, 0.35)"; // Green
+    return Colors.dark.zeroLimit; // Green
   } else if (p < mLimit) {
-    return "#087ea4"; // Neon
+    return Colors.dark.lowLimit; // Neon
   } else if (p > hLimit) {
-    return "rgba(255, 0, 0, 0.35)"; // Red
+    return Colors.dark.highLimit; // Red
   } else {
-    return "rgb(255, 255, 0.35)"; // Yellow
+    return Colors.dark.highLimit; // Yellow
   }
 };
