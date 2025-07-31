@@ -10,7 +10,6 @@ export const cleanTerminalFromDumbWarnings = () => {
   console.warn = (...args) => {
     // https://github.com/react-navigation/react-navigation/issues/11730
     // https://github.com/expo/expo/issues/33248
-    console.log(args);
     if (
       args.includes(
         "props.pointerEvents is deprecated. Use style.pointerEvents"
@@ -70,14 +69,18 @@ export const roundedPrice = (
 
 // Set the color of the price based on the limits
 export const priceToColor = (price: number, mLimit: number, hLimit: number) => {
-  const p = roundedPrice(price); // Round the price to 2 digits
+  const p = roundedPrice(price); // Round the price to 2 digits, adds tax
   if (p < 0) {
     return Colors.dark.zeroLimit; // Green
-  } else if (p < mLimit) {
-    return Colors.dark.lowLimit; // Neon
-  } else if (p > hLimit) {
-    return Colors.dark.highLimit; // Red
-  } else {
-    return Colors.dark.highLimit; // Yellow
   }
+  if (p < mLimit) {
+    return Colors.dark.lowLimit; // Neon
+  }
+  if (p > hLimit) {
+    return Colors.dark.highLimit; // Red
+  }
+  if (p >= mLimit && p <= hLimit) {
+    return Colors.dark.mediumLimit; // Yellow
+  }
+  return "white";
 };

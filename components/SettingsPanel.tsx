@@ -5,6 +5,7 @@ import {
   Button,
   Appearance,
   ToastAndroid,
+  Pressable,
 } from "react-native";
 
 import { saveMultiple, getMultiple } from "@/utils/manageStorage";
@@ -12,6 +13,7 @@ import { saveMultiple, getMultiple } from "@/utils/manageStorage";
 import { DefaultValues } from "@/constants/DefaultValues";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { DarkTheme } from "@react-navigation/native";
 
 export default function SettingsPanel() {
   const [mLimit, setMLimit] = useState<string>("10");
@@ -95,9 +97,8 @@ export default function SettingsPanel() {
     ])
       .then(() => {
         try {
-          ToastAndroid.show("Default values reset.", ToastAndroid.SHORT);
-          clearInputs();
-          console.log("Default values reset successfully");
+          setMLimit(DefaultValues.MLIMIT);
+          setHLimit(DefaultValues.HLIMIT);
         } catch (error) {
           console.log("Error saving values or showing toast:", error);
         }
@@ -106,8 +107,6 @@ export default function SettingsPanel() {
         console.error("Error resetting values:", error);
       })
       .finally(() => {
-        setMLimit(DefaultValues.MLIMIT);
-        setHLimit(DefaultValues.HLIMIT);
         try {
           ToastAndroid.show("Default values reset.", ToastAndroid.SHORT);
           clearInputs();
@@ -163,8 +162,31 @@ export default function SettingsPanel() {
           justifyContent: "center",
         }}
       >
-        <Button title="Save" color={"green"} onPress={saveLimits} />
-        <Button title="Reset to default" onPress={resetToDefault} />
+        <Pressable
+          onPress={saveLimits}
+          style={({ pressed }) => [
+            styles.button,
+
+            {
+              outlineColor: pressed ? "#007224ff" : "#4da167ff",
+            },
+          ]}
+        >
+          <ThemedText style={[styles.buttonText, { color: "#4da167ff" }]}>
+            Save
+          </ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={resetToDefault}
+          style={({ pressed }) => [
+            styles.button,
+            { outlineColor: pressed ? "#494b00ff" : "#95a000ff" },
+          ]}
+        >
+          <ThemedText style={[styles.buttonText, { color: "#95a000ff" }]}>
+            Reset default values
+          </ThemedText>
+        </Pressable>
       </ThemedView>
     </ThemedView>
   );
@@ -174,6 +196,8 @@ const styles = StyleSheet.create({
   text: {
     margin: 10,
     fontSize: 20,
+    textShadowColor: "black",
+    textShadowRadius: 7,
   },
   lightTextInput: {
     color: "black",
@@ -194,5 +218,16 @@ const styles = StyleSheet.create({
     paddingLeft: 5,
     paddingRight: 5,
     borderRadius: 5,
+  },
+  button: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    outlineWidth: 1,
+    outlineStyle: "solid",
+  },
+  buttonText: {
+    fontSize: 16,
   },
 });

@@ -11,7 +11,7 @@ export const getPricesForDate = async (date: DateTime) => {
     const response = await fetch(`${apiURL}/${formatDate(date)}.json`);
 
     if (response.status === 404) {
-      console.error("No data available for the date:", date);
+      console.log("No data available for the date:", date);
       return;
     }
 

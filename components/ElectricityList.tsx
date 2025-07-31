@@ -15,6 +15,7 @@ import {
   getValue,
   PriceStorage,
   Price,
+  saveValue,
 } from "@/utils/manageStorage";
 import { DateTime, Settings } from "luxon";
 import {
@@ -162,6 +163,12 @@ export default function ElectricityList() {
           setLoadingTomorrow(false);
         } else {
           setLoading(false);
+          saveValue(
+            "electricityPrice",
+            roundedPrice(
+              prices[DateTime.now().get("hour")].EUR_per_kWh
+            ).toString()
+          );
         }
       });
   };
@@ -187,8 +194,8 @@ export default function ElectricityList() {
   };
 
   const setIntervals = () => {
+    setNow(DateTime.now());
     setTimeout(() => {
-      setNow(DateTime.now());
       const min = setInterval(() => {
         setNow(DateTime.now());
       }, 60000); // 1 minute
@@ -197,10 +204,16 @@ export default function ElectricityList() {
 
     // Set timer and intervals for updating the prices
     // and the hour, clear them on unmount
+    setHour(DateTime.now().get("hour"));
     setTimeout(() => {
-      setHour(DateTime.now().get("hour"));
       const t = setInterval(() => {
         setHour(DateTime.now().get("hour"));
+        saveValue(
+          "electricityPrice",
+          roundedPrice(
+            prices[DateTime.now().get("hour")].EUR_per_kWh
+          ).toString()
+        );
       }, 36000); // 1 hour
       setTodayInterval(t);
     }, msUntilNextHour());
@@ -331,6 +344,7 @@ export default function ElectricityList() {
           </ThemedText>
           {pricesToDisplay[currentTab].map((price, index) => (
             <Animated.View
+              key={index}
               entering={
                 index % 2 == 0
                   ? FadeInLeft.duration(1000 + index * 150).reduceMotion(
@@ -343,14 +357,13 @@ export default function ElectricityList() {
               style={{ width: "80%" }}
             >
               <TouchableOpacity
-                key={index}
                 style={[
                   styles.priceRow,
                   index === hour && currentTab === 1 ? styles.currentRow : {},
                   selectedRow === index ? styles.highligtRow : {},
                   {
                     borderColor: priceToColor(
-                      price.EUR_per_kWh,
+                      price.EUR_per_kWh ? price.EUR_per_kWh : hLimit,
                       mLimit,
                       hLimit
                     ),
@@ -405,11 +418,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 3,
     alignSelf: "center",
-    width: "30%",
+    width: "100%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    alignContent: "center",
+    alignItems: "center",
     marginBottom: 1,
   },
   currentRow: { backgroundColor: "rgba(0, 125, 163, 0.29)" },
@@ -431,7 +444,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   tabText: {
-    color: "white",
     fontSize: 20,
     fontWeight: "bold",
   },

@@ -55,6 +55,7 @@ export const getMultiple = async (keys: string[]) => {
 };
 
 export const saveValue = async (key: string, value: string) => {
+  console.log(`Saving value for key: ${key}, value: ${value}`);
   try {
     await AsyncStorage.setItem(key, value ? value : "<empty>");
   } catch (e) {

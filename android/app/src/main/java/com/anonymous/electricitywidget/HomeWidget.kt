@@ -141,7 +141,7 @@ class HomeWidget : AppWidgetProvider() {
         val mLimit: Int
         val widgetId = R.layout.home_widget
         val textId = R.id.appwidget_text
-        var newColor = "white" // Normal color
+        var newColor = "#4deeea" // Normal color
         try {
             val ePrice = data.get("electricityPrice").toString().toFloat()
 
@@ -172,6 +172,7 @@ class HomeWidget : AppWidgetProvider() {
             views.setInt(textId, "setTextColor", newColor.toColorInt())
             // Instruct the widget manager to update the widget
             println("Updating widget $appWidgetId with text $newText")
+            println("Color: $newColor | ePrice $ePrice | mLimit: $mLimit | hLimit $hLimit")
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         } catch (e: JSONException) {
