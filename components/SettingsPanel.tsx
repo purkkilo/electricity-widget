@@ -51,24 +51,33 @@ export default function SettingsPanel() {
   async function saveLimits() {
     try {
       if (!editingMLimit || !editingHLimit) {
-        ToastAndroid.show(
-          "Please enter positive values for both limits.",
-          ToastAndroid.SHORT
-        );
+        try {
+          ToastAndroid.show(
+            "Please enter positive values for both limits.",
+            ToastAndroid.SHORT
+          );
+        } catch (_) {}
+
         return;
       }
       if (parseFloat(editingHLimit) <= parseFloat(editingMLimit)) {
-        ToastAndroid.show(
-          "High limit must be greater than medium limit.",
-          ToastAndroid.SHORT
-        );
+        try {
+          ToastAndroid.show(
+            "High limit must be greater than medium limit.",
+            ToastAndroid.SHORT
+          );
+        } catch (_) {}
+
         return;
       }
       if (parseFloat(editingHLimit) <= 0 || parseFloat(editingMLimit) <= 0) {
-        ToastAndroid.show(
-          "Please enter positive values for both limits.",
-          ToastAndroid.SHORT
-        );
+        try {
+          ToastAndroid.show(
+            "Please enter positive values for both limits.",
+            ToastAndroid.SHORT
+          );
+        } catch (_) {}
+
         return;
       }
 
@@ -77,10 +86,12 @@ export default function SettingsPanel() {
         ["hLimit", editingHLimit],
       ])
         .then(() => {
-          setMLimit(editingMLimit);
-          setHLimit(editingHLimit);
-          clearInputs();
-          ToastAndroid.show("Values saved successfully", ToastAndroid.SHORT);
+          try {
+            setMLimit(editingMLimit);
+            setHLimit(editingHLimit);
+            clearInputs();
+            ToastAndroid.show("Values saved successfully", ToastAndroid.SHORT);
+          } catch (_) {}
         })
         .catch((error) => {
           console.error("Error saving values:", error);
@@ -124,6 +135,27 @@ export default function SettingsPanel() {
     tInput2.current?.clear();
   }
 
+  function validateNumberInput(
+    text: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) {
+    // for faster input
+    if (text === ".") {
+      setter("0.");
+      return;
+    }
+    if (text === "-.") {
+      setter("-0.");
+      return;
+    }
+
+    // Regex to match only numbers and a .
+    const regex = /^-?\d*\.?\d*$/;
+    if (regex.test(text)) {
+      setter(text);
+    }
+  }
+
   return (
     <ThemedView
       style={{
@@ -138,10 +170,11 @@ export default function SettingsPanel() {
         ref={tInput}
         placeholder="Medium Limit"
         style={textInputStyle}
-        onChangeText={setEditingMLimit}
+        onChangeText={(text) => validateNumberInput(text, setEditingMLimit)}
         clearButtonMode="always"
         keyboardType="numeric"
         inputMode="decimal"
+        value={editingMLimit}
       />
       <ThemedText type="default" style={[styles.text, { color: "red" }]}>
         High Limit: {hLimit}
@@ -150,10 +183,11 @@ export default function SettingsPanel() {
         ref={tInput2}
         placeholder="High Limit"
         style={textInputStyle}
-        onChangeText={setEditingHLimit}
         clearButtonMode="always"
         keyboardType="numeric"
         inputMode="decimal"
+        onChangeText={(text) => validateNumberInput(text, setEditingHLimit)}
+        value={editingHLimit}
       />
       <ThemedView
         style={{

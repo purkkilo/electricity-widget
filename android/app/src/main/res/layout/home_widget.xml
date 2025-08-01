@@ -4,7 +4,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/customborder"
-    android:backgroundTint="#8020202C"
+    android:backgroundTint="@android:color/system_accent2_700"
     android:orientation="horizontal"
     android:padding="10dp"
     android:theme="@style/Theme.Material3.DynamicColors.DayNight">
@@ -15,7 +15,7 @@
         android:layout_gravity="center"
         android:layout_marginEnd="5dp"
         android:contentDescription="@string/widget_icon"
-        android:foregroundTint="#C74444"
+        android:foregroundTint="@color/colorPrimary"
         android:src="@android:drawable/ic_lock_idle_low_battery" />
 
     <TextView
@@ -42,6 +42,7 @@
         android:layout_marginTop="-5dp"
         android:text="@string/appwidget_unit"
         android:textColor="#CCCBCB"
+        android:textSize="10sp"
         android:textStyle="italic" />
 
 </LinearLayout>

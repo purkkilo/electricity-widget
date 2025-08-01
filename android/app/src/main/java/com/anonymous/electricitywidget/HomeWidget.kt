@@ -26,6 +26,8 @@ import androidx.core.graphics.toColorInt
  * Implementation of App Widget functionality.
  */
 
+data class DataFromDB(val electricityPrice: String, val pricesToday: String, val pricesTomorrow: String, val pricesYesterday: String, val limits : JSONObject)
+
 class HomeWidget : AppWidgetProvider() {
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -99,12 +101,15 @@ class HomeWidget : AppWidgetProvider() {
         return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
     }
 
-    private fun getDataFromRNDatabase(context: Context): JSONObject {
-
+    private fun getDataFromRNDatabase(context: Context): DataFromDB {
         var catalystLocalStorage: Cursor? = null
         var readableDatabase: SQLiteDatabase? = null
         val columns:  Array<String> = arrayOf("key, value")
-        val data = JSONObject()
+        val limits = JSONObject()
+        var electricityPrice = ""
+        var pricesToday = ""
+        var pricesTomorrow = ""
+        var pricesYesterday = ""
 
         try {
             readableDatabase =
@@ -116,64 +121,62 @@ class HomeWidget : AppWidgetProvider() {
 
             if (catalystLocalStorage.moveToFirst()) {
                 do {
-                    data.put(catalystLocalStorage.getString(keyColumn), catalystLocalStorage.getString(valueColumn))
+                    val n = catalystLocalStorage.getString(keyColumn)
+                    val v = catalystLocalStorage.getString(valueColumn)
+
+                    when(n) {
+                        "electricityPrice" -> electricityPrice = v
+                        "prices-today" -> pricesToday = v
+                        "prices-tomorrow" -> pricesTomorrow = v
+                        "prices-yesterday" -> pricesYesterday = v
+                        else -> limits.put(n, v)
+                    }
                 } while (catalystLocalStorage.moveToNext())
             }
 
+
         } catch (e: Exception) {
-            println(e)
+            e.printStackTrace()
         } finally {
             catalystLocalStorage?.close()
             readableDatabase?.close()
         }
 
-        return data
+        return DataFromDB(electricityPrice,pricesToday,pricesTomorrow, pricesYesterday, limits)
     }
 
     private fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
-        data: JSONObject,
+        dataFromDB: DataFromDB,
     ) {
-        val newText: String
-        val hLimit: Int
-        val mLimit: Int
-        val widgetId = R.layout.home_widget
-        val textId = R.id.appwidget_text
-        var newColor = "#4deeea" // Normal color
         try {
-            val ePrice = data.get("electricityPrice").toString().toFloat()
+            val (electricityPrice, _, _, _, limits) = dataFromDB
+            val ePrice = electricityPrice.toFloat()
 
-            newText = data.get("electricityPrice").toString()
-
-            hLimit = Integer.parseInt(data.get("highLimit").toString())
-            mLimit = Integer.parseInt(data.get("mediumLimit").toString())
-
-            // Construct the RemoteViews object
-            val views = RemoteViews(context.packageName, widgetId)
-            views.setTextViewText(R.id.appwidget_text, newText)
-
-
-
+            val hLimit = limits.get("hLimit").toString().toFloat()
+            val  mLimit = limits.get("mLimit").toString().toFloat()
 
             // Only set color if negative or over medium limit, don't change between 0 - mLimit
+            var newColor = "#4deeea" // Normal color
             if(ePrice >= hLimit) {
                 newColor = "red"
             }
-            if (ePrice >= mLimit) {
+            else if (ePrice >= mLimit) {
                 newColor = "yellow"
             }
-            if(ePrice <= 0) {
+            else if(ePrice <= 0) {
                 newColor = "green"
             }
 
-
-            views.setInt(textId, "setTextColor", newColor.toColorInt())
+            // Construct the RemoteViews object
+            val views = RemoteViews(context.packageName, R.layout.home_widget)
+            views.setTextViewText(R.id.appwidget_text, electricityPrice)
+            views.setInt(R.id.appwidget_text, "setTextColor", newColor.toColorInt())
+            views.setInt(R.id.appwidget_unit, "setTextColor", newColor.toColorInt())
+            println("Updating widget $appWidgetId with text $electricityPrice")
             // Instruct the widget manager to update the widget
-            println("Updating widget $appWidgetId with text $newText")
-            println("Color: $newColor | ePrice $ePrice | mLimit: $mLimit | hLimit $hLimit")
-
             appWidgetManager.updateAppWidget(appWidgetId, views)
         } catch (e: JSONException) {
             e.printStackTrace()

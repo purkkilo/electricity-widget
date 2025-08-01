@@ -38,6 +38,7 @@ import Animated, {
   ReduceMotion,
 } from "react-native-reanimated";
 import { useIsFocused } from "@react-navigation/native";
+import { parse } from "@babel/core";
 
 export default function ElectricityList() {
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -136,24 +137,32 @@ export default function ElectricityList() {
         // else fetch the prices from the api
         if (data) {
           parsedData = JSON.parse(data);
+          parsedData.prices = parsedData.prices
+            ? parsedData.prices
+            : [dataNotAvailable];
+
           const startDate = DateTime.fromISO(parsedData.start);
-          reload = startDate.toISODate() !== date.toISODate();
+          const isSameDate = startDate.hasSame(date, "day");
+          const isAfter4pm = DateTime.now().get("hour") >= 16;
+          reload =
+            !isSameDate ||
+            (parsedData.prices[0].EUR_per_kWh === null && isAfter4pm);
         } else reload = true;
+
         if (reload) {
           fetchPricesFromApi(date, dateKey);
         } else {
           if (dateKey === "prices-yesterday") {
-            setPrevPrices(
-              parsedData.prices ? parsedData.prices : [dataNotAvailable]
-            );
+            setPrevPrices(parsedData.prices);
           } else if (dateKey === "prices-tomorrow") {
-            setTomorrowPrices(
-              parsedData.prices ? parsedData.prices : [dataNotAvailable]
+            setTomorrowPrices(parsedData.prices);
+          } else {
+            setPrices(parsedData.prices);
+            saveValue(
+              "electricityPrice",
+              roundedPrice(parsedData.prices[hour].EUR_per_kWh).toString()
             );
-          } else
-            setPrices(
-              parsedData.prices ? parsedData.prices : [dataNotAvailable]
-            );
+          }
         }
       })
       .finally(() => {
@@ -163,12 +172,6 @@ export default function ElectricityList() {
           setLoadingTomorrow(false);
         } else {
           setLoading(false);
-          saveValue(
-            "electricityPrice",
-            roundedPrice(
-              prices[DateTime.now().get("hour")].EUR_per_kWh
-            ).toString()
-          );
         }
       });
   };
@@ -373,7 +376,7 @@ export default function ElectricityList() {
                   setSelectedRow(selectedRow === index ? null : index);
                 }}
               >
-                {price.EUR_per_kWh === null ? (
+                {!price.EUR_per_kWh ? (
                   <>
                     <ThemedText type="default" style={{ fontWeight: "bold" }}>
                       {price.time_start} - {price.time_end}

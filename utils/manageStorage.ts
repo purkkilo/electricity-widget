@@ -55,7 +55,6 @@ export const getMultiple = async (keys: string[]) => {
 };
 
 export const saveValue = async (key: string, value: string) => {
-  console.log(`Saving value for key: ${key}, value: ${value}`);
   try {
     await AsyncStorage.setItem(key, value ? value : "<empty>");
   } catch (e) {
@@ -72,8 +71,6 @@ export const saveMultiple = async (items: [string, string][]) => {
                 ["@MyApp_key", "value_2"]
               ]
     */
-    console.log("Saving multiple items:", items);
-
     await AsyncStorage.multiSet(items);
   } catch (e) {
     console.error(e);
