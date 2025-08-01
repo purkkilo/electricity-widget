@@ -160,7 +160,11 @@ export default function ElectricityList() {
             setPrices(parsedData.prices);
             saveValue(
               "electricityPrice",
-              roundedPrice(parsedData.prices[hour].EUR_per_kWh).toString()
+              roundedPrice(
+                parsedData.prices[hour]
+                  ? parsedData.prices[hour].EUR_per_kWh
+                  : 0
+              ).toString()
             );
           }
         }
@@ -192,6 +196,7 @@ export default function ElectricityList() {
         savePrices(date, data, dateKey);
       })
       .catch((error) => {
+        console.log("huh");
         console.error("Error fetching prices:", error);
       });
   };
@@ -210,12 +215,13 @@ export default function ElectricityList() {
     setHour(DateTime.now().get("hour"));
     setTimeout(() => {
       const t = setInterval(() => {
-        setHour(DateTime.now().get("hour"));
+        let h = DateTime.now().get("hour");
+        setHour(h);
+        console.log("Current hour:", h);
+        console.log("Current price:", prices[h].EUR_per_kWh);
         saveValue(
           "electricityPrice",
-          roundedPrice(
-            prices[DateTime.now().get("hour")].EUR_per_kWh
-          ).toString()
+          roundedPrice(prices[h].EUR_per_kWh).toString()
         );
       }, 36000); // 1 hour
       setTodayInterval(t);
