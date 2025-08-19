@@ -40,7 +40,7 @@ npm install
 
 ```bash
 # Start the development server
-npm run start
+npm start
 ```
 
 In the output, you'll find options to open the app in:
